@@ -84,28 +84,33 @@ int main() {
     sobelOut.write("./Output/sobelFiltered.png");
     // ---------------------------------------------------
 
-    Image gradient = gradientMagnitude(im2, true);
-    gradient.write("./Output/gradientMag.png");
+    //Image gradient = gradientMagnitude(im2, true);
+    //gradient.write("./Output/gradientMag.png");
 
     // 1D Gaussian
-    Image gauss1D = gaussianBlur_horizontal(im2, 2.0, 3.0, true);
-    gauss1D.write("./Output/gauss1D.png");
+    //Image gauss1D = gaussianBlur_horizontal(im2, 2.0, 3.0, true);
+    //gauss1D.write("./Output/gauss1D.png");
 
     // 2D Gaussian
-    Image gauss2D = gaussianBlur_2D(im2, 4.0);
-    gauss2D.write("./Output/gauss2D.png");
+    //Image gauss2D = gaussianBlur_2D(im2, 4.0);
+    //gauss2D.write("./Output/gauss2D.png");
 
     // Separable Gaussian
-    Image separable = gaussianBlur_separable(im2, 4.0);
-    separable.write("./Output/gauss2Dseparable.png");
+    //Image separable = gaussianBlur_separable(im2, 4.0);
+    //separable.write("./Output/gauss2Dseparable.png");
 
     // Unsharp Mask
-    Image unsharp = unsharpMask(im2, 2.0);
-    unsharp.write("./Output/sharpen.png");
-    Image unsharp2 = unsharpMask(im2, 3.0);
-    unsharp2.write("./Output/sharpen_sigma.png");
-    Image unsharp3 = unsharpMask(im2, 2.0, 3.0, 2.0);
-    unsharp3.write("./Output/sharpen_strength.png");
+    //Image unsharp = unsharpMask(im2, 2.0);
+    //unsharp.write("./Output/sharpen.png");
+    //Image unsharp2 = unsharpMask(im2, 3.0);
+    //unsharp2.write("./Output/sharpen_sigma.png");
+    //Image unsharp3 = unsharpMask(im2, 2.0, 3.0, 2.0);
+    //unsharp3.write("./Output/sharpen_strength.png");
+
+    // Bilateral
+    Image lens("./Input/lens.png");
+    Image denoise = bilateral(lens);
+    denoise.write("./Output/denoise.png");
 
     // --- Timer example ---------------------------------
     clock_t start = clock();

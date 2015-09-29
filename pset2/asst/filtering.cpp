@@ -231,7 +231,44 @@ Image unsharpMask(const Image &im, float sigma, float truncate, float strength, 
 Image bilateral(const Image &im, float sigmaRange, float sigmaDomain, float truncateDomain, bool clamp){
     // --------- HANDOUT  PS02 ------------------------------
     // Denoise an image using the bilateral filter
-    return im;
+    vector<float> kernel = gauss2DFilterValues(sigmaDomain, truncateDomain);
+    int dim = 1 + 2*ceil(sigmaDomain*truncateDomain);
+
+    int k_start = -dim/2;
+    int k_end = dim/2;
+
+    Image output(im.width(), im.height(), im.channels());
+
+    for (int i=0; i < im.width(); i++) {
+        for (int j=0; j < im.height(); j++) {
+            for (int z=0; z < im.channels(); z++) {
+                float computed_val = 0; // Output of the kernel
+                float fixed_val = im.smartAccessor(i,j,z,clamp);
+
+                // Kernel loops, kernel is row major
+                // k_i indexes into rows, k_j into columns
+                float normalize = 0;
+                for (int k_i = k_start; k_i <= k_end; k_i++) {
+                    for (int k_j = k_start; k_j <= k_end; k_j++) {
+                        // k_i and k_j make sense for indexing into the image
+                        // but not into the kernel so we make an adjustment to
+                        // make it start from 0
+                        int k_idx = (-k_i - k_start) + dim*(-k_j - k_start);
+                        float kernel_val = kernel[k_idx];
+
+                        // Compute the factor based on difference in intensity
+                        float moving_val = im.smartAccessor(i+k_i, j+k_j, z, clamp);
+                        float intensity_factor = (1./(sigmaRange*sqrt(2*M_PI))) * exp(-pow(moving_val-fixed_val, 2)/(2*pow(sigmaRange,2)));
+                        computed_val += kernel_val * intensity_factor * moving_val;
+                        normalize += kernel_val * intensity_factor;
+                    }
+                }
+                output(i,j,z) = computed_val / normalize;
+            }
+        }
+    }
+
+    return output;
 }
 
 
