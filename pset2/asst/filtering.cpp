@@ -277,7 +277,81 @@ Image bilaYUV(const Image &im, float sigmaRange, float sigmaY, float sigmaUV, fl
     // 6.865 only
     // Bilaterial Filter an image seperatly for
     // the Y and UV components of an image
-    return im;
+    Image im_yuv = rgb2yuv(im);
+
+    // Values for Y
+    vector<float> kernel_y = gauss2DFilterValues(sigmaY, truncateDomain);
+    int dim_y = 1 + 2*ceil(sigmaY*truncateDomain);
+
+    // Values for UV
+    vector<float> kernel_uv = gauss2DFilterValues(sigmaUV, truncateDomain);
+    int dim_uv = 1 + 2*ceil(sigmaUV*truncateDomain);
+
+    int ky_start = -dim_y/2;
+    int ky_end = dim_y/2;
+    int kuv_start = -dim_uv/2;
+    int kuv_end = dim_uv/2;
+
+    Image output_yuv(im.width(), im.height(), im.channels());
+
+    for (int i=0; i < im.width(); i++) {
+        for (int j=0; j < im.height(); j++) {
+            for (int z=0; z < im.channels(); z++) {
+                if (z == 0) {
+                    float computed_val = 0; // Output of the kernel
+                    float fixed_val = im_yuv.smartAccessor(i,j,z,clamp);
+
+                    // Kernel loops, kernel is row major
+                    // k_i indexes into rows, k_j into columns
+                    float normalize = 0;
+                    for (int k_i = ky_start; k_i <= ky_end; k_i++) {
+                        for (int k_j = ky_start; k_j <= ky_end; k_j++) {
+                            // k_i and k_j make sense for indexing into the image
+                            // but not into the kernel so we make an adjustment to
+                            // make it start from 0
+                            int k_idx = (-k_i - ky_start) + dim_y*(-k_j - ky_start);
+                            float kernel_val = kernel_y[k_idx];
+
+                            // Compute the factor based on difference in intensity
+                            float moving_val = im_yuv.smartAccessor(i+k_i, j+k_j, z, clamp);
+                            float intensity_factor = (1./(sigmaRange*sqrt(2*M_PI))) * exp(-pow(moving_val-fixed_val, 2)/(2*pow(sigmaRange,2)));
+                            computed_val += kernel_val * intensity_factor * moving_val;
+                            normalize += kernel_val * intensity_factor;
+                        }
+                    }
+                    output_yuv(i,j,z) = computed_val / normalize;
+                }
+                else {
+                    float computed_val = 0; // Output of the kernel
+                    float fixed_val = im_yuv.smartAccessor(i,j,z,clamp);
+
+                    // Kernel loops, kernel is row major
+                    // k_i indexes into rows, k_j into columns
+                    float normalize = 0;
+                    for (int k_i = kuv_start; k_i <= kuv_end; k_i++) {
+                        for (int k_j = kuv_start; k_j <= kuv_end; k_j++) {
+                            // k_i and k_j make sense for indexing into the image
+                            // but not into the kernel so we make an adjustment to
+                            // make it start from 0
+                            int k_idx = (-k_i - kuv_start) + dim_uv*(-k_j - kuv_start);
+                            float kernel_val = kernel_uv[k_idx];
+
+                            // Compute the factor based on difference in intensity
+                            float moving_val = im_yuv.smartAccessor(i+k_i, j+k_j, z, clamp);
+                            float intensity_factor = (1./(sigmaRange*sqrt(2*M_PI))) * exp(-pow(moving_val-fixed_val, 2)/(2*pow(sigmaRange,2)));
+                            computed_val += kernel_val * intensity_factor * moving_val;
+                            normalize += kernel_val * intensity_factor;
+                        }
+                    }
+                    output_yuv(i,j,z) = computed_val / normalize;
+                }
+            }
+        }
+    }
+
+    Image output = yuv2rgb(output_yuv);
+
+    return output;
 }
 
 

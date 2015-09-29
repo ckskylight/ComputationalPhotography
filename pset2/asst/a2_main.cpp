@@ -112,6 +112,10 @@ int main() {
     Image denoise = bilateral(lens);
     denoise.write("./Output/denoise.png");
 
+    // YUV Bilateral
+    Image yuv_denoise = bilaYUV(lens);
+    yuv_denoise.write("./Output/yuv_denoise.png");
+
     // --- Timer example ---------------------------------
     clock_t start = clock();
     float sigma = 2.0f;
